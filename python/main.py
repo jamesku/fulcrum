@@ -2,6 +2,7 @@ import newspapergrabber
 import newssources
 import psycopg2
 from dateutil import parser
+import os
 # import types
 # import importlib.util
 #
@@ -23,8 +24,13 @@ for feed in this_rss:
 for feed in feed_array:
     for article in feed:
         dt = parser.parse(article.publish_date)
+        articletext = os.linesep.join([s for s in article.text.splitlines() if s.strip()])
+        articletext = articletext.replace("""’""", '')
+        articletext = articletext.replace("""“""", '')
+        articletext = articletext.replace("""”""", '')
+    
         try:
-            cur.execute("""INSERT INTO newsarticles (title,article,topimage,url,publish_date,compscore) VALUES (%(title)s, %(article)s, %(topimage)s, %(url)s, %(publish_date)s, %(compscore)s) ON CONFLICT (url) DO UPDATE SET title=%(title)s, article=%(article)s, topimage=%(topimage)s, publish_date=%(publish_date)s, compscore=%(compscore)s WHERE (newsarticles.article) != %(article)s;""", {'title': article.title, 'article': article.text, 'topimage': article.top_image, 'url': article.url, 'publish_date': dt, 'compscore': 0})
+            cur.execute("""INSERT INTO newsarticles (title,article,topimage,url,publish_date,compscore) VALUES (%(title)s, %(article)s, %(topimage)s, %(url)s, %(publish_date)s, %(compscore)s) ON CONFLICT (url) DO UPDATE SET title=%(title)s, article=%(article)s, topimage=%(topimage)s, publish_date=%(publish_date)s, compscore=%(compscore)s WHERE (newsarticles.article) != %(article)s;""", {'title': article.title, 'article': articletext, 'topimage': article.top_image, 'url': article.url, 'publish_date': dt, 'compscore': -1})
 
         except psycopg2.Error:
             print(Error.args)
